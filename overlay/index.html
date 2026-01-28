@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pokemon Catch Overlay</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: transparent;
+            font-family: 'Press Start 2P', monospace;
+            overflow: hidden;
+            width: 1920px;
+            height: 1080px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #overlay-container {
+            position: relative;
+            width: 1000px;
+            height: 680px;
+            pointer-events: none;
+        }
+
+        .pokemon-spawn {
+            display: none;
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 430px;
+            height: 680px;
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            border: 8px solid rgba(255, 255, 255, 0.6);
+            border-radius: 40px;
+            padding: 30px 40px 40px 40px;
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.4),
+                inset 0 0 20px rgba(255, 255, 255, 0.1);
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(450px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(450px);
+                opacity: 0;
+            }
+        }
+
+        .pokemon-sprite-container {
+            position: relative;
+            width: 350px;
+            height: 350px;
+            margin: 0 auto;
+        }
+
+        .pokemon-sprite {
+            position: absolute;
+            bottom: 30px;
+            left: calc(50% + 5px);
+            transform: translateX(-50%);
+            width: 280px;
+            height: 280px;
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+            animation: bounce 1s infinite;
+            z-index: 3;
+        }
+
+        @keyframes bounce {
+            0%, 100% { 
+                transform: translateX(-50%) translateY(0); 
+            }
+            50% { 
+                transform: translateX(-50%) translateY(-60px); 
+            }
+        }
+
+        .grass-layer {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 290px;
+            height: 85px;
+            background: radial-gradient(ellipse at center, #8B7355 0%, #6B5345 50%, #4B3335 100%);
+            border-radius: 50%;
+            border: 8px solid #3B2325;
+            z-index: 2;
+            box-shadow: 
+                0 4px 8px rgba(0,0,0,0.4),
+                inset 0 -2px 4px rgba(0,0,0,0.3);
+        }
+
+        .grass-layer::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 85%;
+            height: 60%;
+            background: radial-gradient(ellipse at center, rgba(255,255,255,0.1) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .grass-layer::after {
+            content: '';
+            position: absolute;
+            bottom: 1px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            height: 8px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 50%;
+            filter: blur(6px);
+        }
+
+        .pokemon-info {
+            text-align: center;
+            color: white;
+            text-shadow: 4px 4px 8px rgba(0,0,0,0.8);
+        }
+
+        .pokemon-name {
+            font-size: 52px;
+            margin: 12px 0 6px 0;
+        }
+
+        .pokemon-type {
+            font-size: 32px;
+            margin: 6px 0;
+        }
+
+        .rarity-badge {
+            display: inline-block;
+            padding: 12px 35px;
+            border-radius: 24px;
+            font-size: 28px;
+            margin-top: 12px;
+        }
+
+        .rarity-common { background: #9E9E9E; }
+        .rarity-uncommon { background: #4CAF50; }
+        .rarity-rare { background: #2196F3; }
+        .rarity-epic { background: #9C27B0; }
+        .rarity-legendary { background: #FF9800; animation: pulse 1s infinite; }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        /* Catch Animation */
+        .catch-animation {
+            display: none;
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 430px;
+            height: 680px;
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            border: 8px solid rgba(255, 255, 255, 0.6);
+            border-radius: 40px;
+            padding: 30px 40px 40px 40px;
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.4),
+                inset 0 0 20px rgba(255, 255, 255, 0.1);
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .catch-animation.active {
+            display: flex;
+        }
+
+        .trainer-name {
+            font-size: 38px;
+            color: #FFD700;
+            text-shadow: 4px 4px 8px rgba(0,0,0,0.9);
+            margin-bottom: 30px;
+        }
+
+        .pokeball {
+            width: 200px;
+            height: 200px;
+            animation: shake 0.5s infinite;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0) rotate(0deg); }
+            25% { transform: translateX(-30px) rotate(-5deg); }
+            75% { transform: translateX(30px) rotate(5deg); }
+        }
+
+        .catch-result {
+            font-size: 58px;
+            margin-top: 30px;
+            animation: scaleIn 0.5s ease-out;
+        }
+
+        @keyframes scaleIn {
+            from {
+                transform: scale(0);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .success {
+            color: #4CAF50;
+        }
+
+        .fail {
+            color: #F44336;
+        }
+
+        /* Particle Effects */
+        .particles {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+        }
+
+        .particle {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background: #FFD700;
+            border-radius: 50%;
+            animation: particle-float 2s ease-out forwards;
+        }
+
+        @keyframes particle-float {
+            from {
+                transform: translateY(0) scale(1);
+                opacity: 1;
+            }
+            to {
+                transform: translateY(-200px) scale(0);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="overlay-container">
+        <!-- Spawn Display -->
+        <div id="spawn-display" class="pokemon-spawn">
+            <div class="pokemon-info">
+                <div class="pokemon-sprite-container">
+                    <img id="spawn-sprite" class="pokemon-sprite" src="" alt="Pokemon">
+                    <div class="grass-layer"></div>
+                </div>
+                <div class="pokemon-name" id="spawn-name"></div>
+                <div class="pokemon-type" id="spawn-type"></div>
+                <span class="rarity-badge" id="spawn-rarity"></span>
+            </div>
+        </div>
+
+        <!-- Catch Animation -->
+        <div id="catch-animation" class="catch-animation">
+            <div class="trainer-name" id="trainer-name"></div>
+            <img id="catch-ball-img" class="pokeball" src="" alt="Pokeball">
+            <div class="catch-result" id="catch-result"></div>
+            <div class="particles" id="particles"></div>
+        </div>
+    </div>
+
+    <script>
+        // Automatically detect WebSocket URL based on where overlay is loaded from
+        // Force IPv4 for localhost to avoid IPv6 connection issues
+        let hostname = window.location.hostname || 'localhost';
+        if (hostname === 'localhost') {
+            hostname = '127.0.0.1';
+        }
+        const WS_URL = `ws://${hostname}:8001`;
+        
+        console.log('Connecting to WebSocket:', WS_URL);
+        
+        let ws;
+        let reconnectInterval;
+
+        function connect() {
+            ws = new WebSocket(WS_URL);
+
+            ws.onopen = () => {
+                console.log('✅ Connected to Pokemon bot at', WS_URL);
+                clearInterval(reconnectInterval);
+            };
+
+            ws.onmessage = (event) => {
+                console.log('📨 Received message:', event.data);
+                const data = JSON.parse(event.data);
+                handleEvent(data);
+            };
+
+            ws.onclose = () => {
+                console.log('❌ Disconnected from bot. Reconnecting...');
+                reconnectInterval = setInterval(connect, 5000);
+            };
+
+            ws.onerror = (error) => {
+                console.error('⚠️ WebSocket error:', error);
+            };
+        }
+
+        function handleEvent(data) {
+            switch (data.type) {
+                case 'spawn':
+                    showSpawn(data);
+                    break;
+                case 'despawn':
+                    hideSpawn();
+                    break;
+                case 'catch_attempt':
+                    showCatchAnimation(data);
+                    break;
+            }
+        }
+
+        function showSpawn(data) {
+            const display = document.getElementById('spawn-display');
+            const sprite = document.getElementById('spawn-sprite');
+            const name = document.getElementById('spawn-name');
+            const type = document.getElementById('spawn-type');
+            const rarity = document.getElementById('spawn-rarity');
+
+            sprite.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${data.sprite}.png`;
+            name.textContent = data.pokemon;
+            rarity.textContent = data.rarity.toUpperCase();
+            rarity.className = `rarity-badge rarity-${data.rarity}`;
+
+            display.style.display = 'block';
+            display.style.animation = 'slideIn 0.5s ease-out';
+        }
+
+        function hideSpawn() {
+            const display = document.getElementById('spawn-display');
+            display.style.animation = 'slideOut 0.5s ease-out';
+            setTimeout(() => {
+                display.style.display = 'none';
+            }, 500);
+        }
+
+        function showCatchAnimation(data) {
+            hideSpawn();
+
+            const animation = document.getElementById('catch-animation');
+            const trainerName = document.getElementById('trainer-name');
+            const ballImg = document.getElementById('catch-ball-img');
+            const result = document.getElementById('catch-result');
+            const particles = document.getElementById('particles');
+
+            // Map ball types to PokeAPI item sprite IDs
+            const ballSprites = {
+                'pokeball': 4,
+                'greatball': 3,
+                'ultraball': 2,
+                'masterball': 1
+            };
+
+            const ballId = ballSprites[data.ball_type] || 4; // Default to pokeball
+            ballImg.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png`.replace('poke-ball', 
+                data.ball_type === 'pokeball' ? 'poke-ball' :
+                data.ball_type === 'greatball' ? 'great-ball' :
+                data.ball_type === 'ultraball' ? 'ultra-ball' :
+                data.ball_type === 'masterball' ? 'master-ball' : 'poke-ball'
+            );
+
+            trainerName.textContent = `${data.username} used ${data.ball_type}!`;
+            result.textContent = '';
+            particles.innerHTML = '';
+
+            animation.classList.add('active');
+
+            // Show result after 2 seconds
+            setTimeout(() => {
+                if (data.success) {
+                    result.textContent = '✓ CAUGHT!';
+                    result.className = 'catch-result success';
+                    createParticles(particles);
+                } else {
+                    result.textContent = '✗ FAILED!';
+                    result.className = 'catch-result fail';
+                }
+
+                // Hide animation after 3 more seconds
+                setTimeout(() => {
+                    animation.classList.remove('active');
+                    // Clean up
+                    particles.innerHTML = '';
+                    result.textContent = '';
+                }, 3000);
+            }, 2000);
+        }
+
+        function createParticles(container) {
+            for (let i = 0; i < 20; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = `${Math.random() * 100}%`;
+                particle.style.animationDelay = `${Math.random() * 0.5}s`;
+                container.appendChild(particle);
+            }
+        }
+
+        // Connect to WebSocket
+        connect();
+    </script>
+</body>
+</html>

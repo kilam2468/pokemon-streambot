@@ -1,0 +1,47 @@
+
+           POKEMON STREAM BOT - SETUP COMPLETE                  ║
+
+  ✅ Automated setup script (setup.sh)
+  ✅ Production start script (start-production.sh)
+  ✅ Development start script (start.sh)
+  ✅ Status checker (status.sh)
+  ✅ Nginx configurations for poke.hfdn.dev
+  ✅ Nginx setup script (setup-nginx.sh)
+  ✅ Stream status checking (only spawns when live)
+  ✅ Comprehensive documentation
+
+
+1. Initial Setup:
+   chmod +x setup.sh && ./setup.sh
+
+2. Configure Twitch:
+   nano bot/.env
+   (Get tokens from https://twitchapps.com/tmi/)
+
+3A. For Local/Testing:
+   ./start.sh
+
+3B. For Production with Domain:
+   chmod +x setup-nginx.sh && ./setup-nginx.sh
+   ./start-production.sh
+
+  • PROXMOX_SETUP.md - Complete Proxmox setup guide
+  • nginx/NGINX_SETUP.md - Nginx configuration guide
+  • QUICK_REFERENCE.md - Command reference card
+  • QUICKSTART.md - Quick start guide
+  • README.md - Full documentation
+
+  • Website: https://poke.hfdn.dev
+  • API: https://poke.hfdn.dev/api/
+  • Overlay: https://poke.hfdn.dev/overlay
+  • WebSocket: wss://poke.hfdn.dev/ws
+
+  ./status.sh                    Check if services are running
+  ./start.sh                     Start in dev mode
+  ./start-production.sh          Start in production mode
+  ./setup-nginx.sh               Setup nginx reverse proxy
+  tail -f logs/bot.log           View bot logs
+  sudo journalctl -u pokemon-bot -f   View systemd logs
+
+
+For help: Check the documentation files above
