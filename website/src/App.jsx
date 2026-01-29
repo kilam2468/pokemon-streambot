@@ -12,8 +12,9 @@ function App() {
   const handleSetUsername = (e) => {
     e.preventDefault();
     if (tempUsername.trim()) {
-      setUsername(tempUsername.trim());
-      localStorage.setItem('pokemon_username', tempUsername.trim());
+      const normalizedUsername = tempUsername.trim().toLowerCase();
+      setUsername(normalizedUsername);
+      localStorage.setItem('pokemon_username', normalizedUsername);
     }
   };
 
