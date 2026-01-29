@@ -19,12 +19,13 @@ fi
 cleanup() {
     echo ""
     echo "🛑 Shutting down all services..."
-    kill $BOT_PID $API_PID 2>/dev/null
+    kill $BOT_PID $API_PID $WEB_PID 2>/dev/null
     pkill -P $$ 2>/dev/null
     exit 0
 }
 
-trap cleanup SIGINT SIGTERM
+# Only trap SIGINT (Ctrl+C), not SIGTERM or SIGHUP
+trap cleanup SIGINT
 
 # Create logs directory if it doesn't exist
 mkdir -p logs

@@ -544,6 +544,10 @@ POKEMON_DATA = {
     "Palkia": {"rarity": "legendary", "spawn_weight": 0.1, "type": "Water/Dragon", "sprite": "484"},
     "Giratina": {"rarity": "legendary", "spawn_weight": 0.1, "type": "Ghost/Dragon", "sprite": "487"},
     "Arceus": {"rarity": "legendary", "spawn_weight": 0.05, "type": "Normal", "sprite": "493"},
+    
+    # GENERATION 5 (Bonus - from backup)
+    "Patrat": {"rarity": "common", "spawn_weight": 0.5, "type": "Normal", "sprite": "504"},
+    "Purrloin": {"rarity": "common", "spawn_weight": 0.5, "type": "Dark", "sprite": "509"},
 }
 
 # Pokeball types with capture rates

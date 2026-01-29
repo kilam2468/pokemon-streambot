@@ -21,9 +21,9 @@ check_process() {
 }
 
 # Check services
-check_process "Twitch Bot" "python.*main.py"
-check_process "API Server" "python.*api.py"
-check_process "Website" "vite|npm run"
+check_process "Twitch Bot" ".venv/bin/python main.py"
+check_process "API Server" "uvicorn api:app"
+check_process "Website" "vite preview"
 
 echo ""
 echo "📡 Port Status:"
@@ -92,7 +92,10 @@ fi
 
 echo ""
 echo "💡 Quick Commands:"
-echo "  Start: ./start.sh (dev) or ./start-production.sh (prod)"
-echo "  Logs: tail -f logs/bot.log"
-echo "  Stop: pkill -f 'python.*main.py'"
+echo "  Start (interactive): ./start-production.sh"
+echo "  Start (daemon):      ./start-daemon.sh"
+echo "  Stop all:            ./stop.sh"
+echo "  Logs (bot):          tail -f logs/bot.log"
+echo "  Logs (api):          tail -f logs/api.log"
+echo "  Logs (website):      tail -f logs/website.log"
 echo ""
