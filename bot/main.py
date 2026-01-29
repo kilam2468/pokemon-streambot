@@ -54,6 +54,9 @@ class PokemonBot(commands.Bot):
         # Start spawn loop
         self.loop.create_task(self.spawn_pokemon_loop())
         
+        # Start viewer rewards loop
+        self.loop.create_task(self.viewer_rewards_loop())
+        
         # Start WebSocket server for overlay
         self.loop.create_task(self.websocket_server())
     
@@ -100,6 +103,97 @@ class PokemonBot(commands.Bot):
             logger.error(f"Error checking stream status: {e}")
             # Assume live on error
             return True
+    
+    async def get_chatters(self):
+        """Get list of current chatters/viewers in the channel"""
+        try:
+            client_id = os.getenv('TWITCH_CLIENT_ID')
+            channel_name = os.getenv('TWITCH_CHANNEL')
+            token = os.getenv('TWITCH_BOT_TOKEN')
+            
+            if not client_id or not channel_name or not token:
+                logger.warning("Missing Twitch credentials for chatters")
+                return []
+            
+            # Remove 'oauth:' prefix if present
+            if token.startswith('oauth:'):
+                token = token[6:]
+            
+            # First, get the broadcaster's user ID
+            user_url = f"https://api.twitch.tv/helix/users?login={channel_name}"
+            headers = {
+                'Client-ID': client_id,
+                'Authorization': f'Bearer {token}'
+            }
+            
+            async with aiohttp.ClientSession() as session:
+                # Get broadcaster ID
+                async with session.get(user_url, headers=headers) as response:
+                    if response.status != 200:
+                        logger.error(f"Failed to get broadcaster ID: {response.status}")
+                        return []
+                    
+                    data = await response.json()
+                    if not data.get('data'):
+                        logger.error("No broadcaster data found")
+                        return []
+                    
+                    broadcaster_id = data['data'][0]['id']
+                
+                # Get chatters using the broadcaster ID
+                chatters_url = f"https://api.twitch.tv/helix/chat/chatters?broadcaster_id={broadcaster_id}&moderator_id={broadcaster_id}"
+                
+                async with session.get(chatters_url, headers=headers) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        # Extract usernames from the data
+                        chatters = [user['user_login'] for user in data.get('data', [])]
+                        return chatters
+                    else:
+                        logger.error(f"Failed to get chatters: {response.status}")
+                        return []
+        except Exception as e:
+            logger.error(f"Error getting chatters: {e}")
+            return []
+    
+    async def viewer_rewards_loop(self):
+        """Award coins to viewers every minute"""
+        while True:
+            await asyncio.sleep(60)  # Wait 1 minute
+            
+            # Check if stream is live
+            if not await self.is_stream_live():
+                logger.info("⏸️ Stream is offline - skipping viewer rewards")
+                continue
+            
+            # Get current chatters/viewers
+            chatters = await self.get_chatters()
+            
+            if not chatters:
+                logger.debug("No chatters found for rewards")
+                continue
+            
+            # Award coins to each viewer who exists in database
+            from sqlalchemy import select
+            from db_utils import async_session
+            from database import User
+            
+            rewarded_count = 0
+            async with async_session() as session:
+                for username in chatters:
+                    # Check if user exists in database
+                    result = await session.execute(
+                        select(User).where(User.twitch_username == username)
+                    )
+                    user = result.scalar_one_or_none()
+                    
+                    if user:
+                        # Award 1 coin for watching
+                        await add_coins(username, 1, "watch_reward", "Watching stream")
+                        rewarded_count += 1
+            
+            if rewarded_count > 0:
+                logger.info(f"💰 Awarded 1 coin to {rewarded_count} viewers")
     
     async def spawn_pokemon_loop(self):
         """Continuously spawn pokemon at random intervals"""
