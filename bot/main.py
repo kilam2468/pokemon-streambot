@@ -341,7 +341,7 @@ class PokemonBot(commands.Bot):
                 f"😢 @{ctx.author.name} The {pokemon_name} broke free from the {POKEBALL_TYPES[ball_type]['name']}!"
             )
     
-    @commands.command(name='inventory', aliases=['inv', 'balls'])
+    @commands.command(name='inventory', aliases=['inv', 'balls', 'bag', 'backpack'])
     async def inventory_command(self, ctx):
         """Check your ball inventory"""
         user = await get_or_create_user(ctx.author.name)
