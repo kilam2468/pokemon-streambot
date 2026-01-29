@@ -1,13 +1,53 @@
-import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Link, useParams, useNavigate, useLocation } from 'react-router-dom';
 import Pokedex from './components/Pokedex';
 import Inventory from './components/Inventory';
 import Stats from './components/Stats';
 import './index.css';
 
-function App() {
+function UserProfile({ view }) {
+  const { username: urlUsername } = useParams();
+  const navigate = useNavigate();
+  const [username, setUsername] = useState(localStorage.getItem('pokemon_username') || '');
+
+  useEffect(() => {
+    if (urlUsername) {
+      const normalizedUsername = urlUsername.trim().toLowerCase();
+      setUsername(normalizedUsername);
+      localStorage.setItem('pokemon_username', normalizedUsername);
+    }
+  }, [urlUsername]);
+
+  const currentUsername = urlUsername ? urlUsername.trim().toLowerCase() : username;
+
+  if (!currentUsername) {
+    return null;
+  }
+
+  const components = {
+    pokedex: <Pokedex username={currentUsername} />,
+    inventory: <Inventory username={currentUsername} />,
+    stats: <Stats username={currentUsername} />
+  };
+
+  return components[view];
+}
+
+function AppContent() {
+  const location = useLocation();
   const [username, setUsername] = useState(localStorage.getItem('pokemon_username') || '');
   const [tempUsername, setTempUsername] = useState(username);
+
+  // Check if URL contains a username parameter
+  useEffect(() => {
+    const pathParts = location.pathname.split('/').filter(Boolean);
+    if (pathParts.length > 0 && !['inventory', 'stats'].includes(pathParts[0])) {
+      const urlUsername = pathParts[0];
+      const normalizedUsername = urlUsername.trim().toLowerCase();
+      setUsername(normalizedUsername);
+      localStorage.setItem('pokemon_username', normalizedUsername);
+    }
+  }, [location.pathname]);
 
   const handleSetUsername = (e) => {
     e.preventDefault();
@@ -18,9 +58,14 @@ function App() {
     }
   };
 
+  // Check if we're on a user profile route
+  const isUserProfileRoute = location.pathname.split('/').filter(Boolean).length > 0 && 
+                             location.pathname !== '/' && 
+                             !location.pathname.startsWith('/inventory') && 
+                             !location.pathname.startsWith('/stats');
+
   return (
-    <Router>
-      <div className="min-h-screen">
+    <div className="min-h-screen">
         <nav 
           className="sticky top-0 z-50 border-b border-white/10"
           style={{
@@ -85,7 +130,7 @@ function App() {
           </div>
         </nav>
 
-        {!username ? (
+        {!username && !isUserProfileRoute ? (
           <div className="flex items-center justify-center min-h-[80vh] px-4">
             <div className="glass-strong rounded-3xl shadow-2xl p-10 max-w-md w-full mx-4 animate-scaleIn">
               <div className="text-center mb-8">
@@ -127,6 +172,9 @@ function App() {
             <Route path="/" element={<Pokedex username={username} />} />
             <Route path="/inventory" element={<Inventory username={username} />} />
             <Route path="/stats" element={<Stats username={username} />} />
+            <Route path="/:username" element={<UserProfile view="pokedex" />} />
+            <Route path="/:username/inventory" element={<UserProfile view="inventory" />} />
+            <Route path="/:username/stats" element={<UserProfile view="stats" />} />
           </Routes>
         )}
 
@@ -139,6 +187,13 @@ function App() {
           </div>
         </footer>
       </div>
+  );
+}
+
+function App() {
+  return (
+    <Router>
+      <AppContent />
     </Router>
   );
 }
