@@ -78,7 +78,7 @@ const Stats = ({ username }) => {
           <div className="glass rounded-2xl p-8 border border-white/10 hover:border-yellow-400/50 card-hover group">
             <div className="flex items-center justify-between mb-3">
               <div className="text-sm font-medium text-gray-400">Coins</div>
-              <div className="text-3xl opacity-50 group-hover:scale-110 transition-transform">🪙</div>
+              <div className="text-3xl opacity-50 group-hover:scale-110 transition-transform">💰</div>
             </div>
             <div className="text-5xl font-bold bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent">{stats.coins}</div>
           </div>

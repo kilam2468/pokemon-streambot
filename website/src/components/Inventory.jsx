@@ -86,7 +86,7 @@ const Inventory = ({ username }) => {
               <div className="text-sm font-medium text-gray-400 mb-2">Your Coins</div>
               <div className="text-6xl font-bold bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent">{inventory.coins}</div>
             </div>
-            <div className="text-7xl animate-float">🪙</div>
+            <div className="text-7xl animate-float">💰</div>
           </div>
         </div>
 
@@ -141,11 +141,11 @@ const Inventory = ({ username }) => {
             </li>
             <li className="flex items-start gap-2">
               <span className="text-purple-400">•</span>
-              <span>Claim your <strong className="text-white">daily bonus</strong> with <code className="px-2 py-1 bg-white/10 rounded text-purple-300">!pdaily</code> (50 coins)</span>
+              <span>Claim your <strong className="text-white">daily bonus</strong> with <code className="px-2 py-1 bg-white/10 rounded text-purple-300">!p daily</code> (50 coins)</span>
             </li>
             <li className="flex items-start gap-2">
               <span className="text-purple-400">•</span>
-              <span>Use <code className="px-2 py-1 bg-white/10 rounded text-purple-300">!pbuy pokeball</code> in Twitch chat to purchase items</span>
+              <span>Use <code className="px-2 py-1 bg-white/10 rounded text-purple-300">!p buy pokeball</code> in Twitch chat to purchase items</span>
             </li>
           </ul>
         </div>

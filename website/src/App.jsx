@@ -116,7 +116,7 @@ function App() {
               </form>
               <div className="mt-6 p-5 glass rounded-2xl border border-white/10">
                 <p className="text-sm text-gray-300 leading-relaxed">
-                  💡 Don't have any Pokémon yet? Join the stream and use <code className="px-2 py-1 bg-white/10 rounded">!pcatch</code> when a Pokémon spawns!
+                  💡 Don't have any Pokémon yet? Join the stream and use <code className="px-2 py-1 bg-white/10 rounded">!p catch</code> when a Pokémon spawns!
                 </p>
               </div>
             </div>

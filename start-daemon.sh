@@ -58,13 +58,11 @@ echo "   PID: $API_PID"
 
 sleep 2
 
-# Build website if needed
-if [ ! -d "website/dist" ]; then
-    echo "💻 Building website..."
-    cd website
-    npm run build > ../logs/build.log 2>&1
-    cd ..
-fi
+# Build website
+echo "💻 Building website..."
+cd website
+npm run build > ../logs/build.log 2>&1
+cd ..
 
 # Start website in background (daemonized)
 echo "🌍 Starting Website (port 4173)..."

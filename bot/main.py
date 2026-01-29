@@ -141,7 +141,7 @@ class PokemonBot(commands.Bot):
                 await channel.send(
                     f"{rarity_emoji.get(pokemon_info['rarity'], '⚪')} A wild {pokemon_name} "
                     f"({pokemon_info['type']}) appeared! [{pokemon_info['rarity'].upper()}] "
-                    f"Use p!catch <ball_type> to try to catch it! (Available: pokeball, greatball, ultraball, masterball)"
+                    f"Use !p catch <ball_type> to try to catch it! (Available: pokeball, greatball, ultraball, masterball)"
                 )
                 
                 # Broadcast to overlay
@@ -193,7 +193,7 @@ class PokemonBot(commands.Bot):
                     break
             
             if ball_type is None:
-                await ctx.send(f"@{ctx.author.name} You don't have any balls! Use p!shop to buy more.")
+                await ctx.send(f"@{ctx.author.name} You don't have any balls! Use !p shop to buy more.")
                 return
         else:
             ball_type = ball_type.lower()
@@ -202,7 +202,7 @@ class PokemonBot(commands.Bot):
                 return
             
             if inventory.get(ball_type, 0) <= 0:
-                await ctx.send(f"@{ctx.author.name} You don't have any {POKEBALL_TYPES[ball_type]['name']}s! Use p!shop to buy more.")
+                await ctx.send(f"@{ctx.author.name} You don't have any {POKEBALL_TYPES[ball_type]['name']}s! Use !p shop to buy more.")
                 return
         
         # Deduct ball from inventory (happens whether catch succeeds or fails)
@@ -269,20 +269,20 @@ class PokemonBot(commands.Bot):
                 f"{POKEBALL_TYPES[ball_type]['name']} x{item['quantity']}: {item['cost']} coins"
             )
         
-        await ctx.send(f"🏪 SHOP: {' | '.join(shop_text)} | Use: p!buy <ball_type>")
+        await ctx.send(f"🏪 SHOP: {' | '.join(shop_text)} | Use: !p buy <ball_type>")
     
     @commands.command(name='buy')
     async def buy_command(self, ctx, *args):
         """Buy balls from the shop"""
         if not args:
-            await ctx.send(f"@{ctx.author.name} Please specify what to buy! Use p!shop to see available items.")
+            await ctx.send(f"@{ctx.author.name} Please specify what to buy! Use !p shop to see available items.")
             return
         
         # Join all arguments and normalize (remove spaces, underscores, hyphens)
         ball_input = ' '.join(args).lower().replace(' ', '').replace('_', '').replace('-', '')
         
         if ball_input not in SHOP_ITEMS:
-            await ctx.send(f"@{ctx.author.name} Invalid item! Use p!shop to see available items.")
+            await ctx.send(f"@{ctx.author.name} Invalid item! Use !p shop to see available items.")
             return
         
         user = await get_or_create_user(ctx.author.name)
@@ -306,16 +306,16 @@ class PokemonBot(commands.Bot):
     @commands.command(name='pokedex', aliases=['dex'])
     async def pokedex_command(self, ctx):
         """Check your pokedex progress"""
-        stats = await get_user_stats(ctx.author.name)
-        
-        if not stats:
-            await ctx.send(f"@{ctx.author.name} You haven't caught any Pokemon yet!")
-            return
-        
         await ctx.send(
-            f"@{ctx.author.name} 📖 Pokedex: {stats['unique_pokemon']} unique | "
-            f"Total caught: {stats['total_caught']} | "
-            f"Visit the website to see your full collection!"
+            f"@{ctx.author.name} 📖 View your Pokédex at https://poke.hfdn.dev/"
+        )
+    
+    @commands.command(name='cmds', aliases=['commands', 'help'])
+    async def commands_command(self, ctx):
+        """Show available commands"""
+        await ctx.send(
+            f"@{ctx.author.name} 📋 Commands: !p catch | !p inventory | !p shop | !p buy <ball> | "
+            f"!p pokedex | !p stats | !p daily | !p give <user> <amount> | !p join | More at https://poke.hfdn.dev/"
         )
     
     @commands.command(name='stats')
@@ -447,7 +447,7 @@ class PokemonBot(commands.Bot):
             return
         
         if amount is None:
-            await ctx.send(f"@{ctx.author.name} Usage: p!raffle <amount>")
+            await ctx.send(f"@{ctx.author.name} Usage: !p raffle <amount>")
             return
         
         # Validate amount
@@ -461,7 +461,7 @@ class PokemonBot(commands.Bot):
         
         # Check if raffle already active
         if self.active_raffle:
-            await ctx.send(f"@{ctx.author.name} A raffle is already active! Use p!endraffle to end it first.")
+            await ctx.send(f"@{ctx.author.name} A raffle is already active! Use !p endraffle to end it first.")
             return
         
         # Start raffle
@@ -473,7 +473,7 @@ class PokemonBot(commands.Bot):
         
         await ctx.send(
             f"🎉 @{ctx.author.name} started a raffle for {amount} coins! "
-            f"Type p!join to enter! Raffle ends in 60 seconds."
+            f"Type !p join to enter! Raffle ends in 60 seconds."
         )
         
         # Start auto-end timer
@@ -525,7 +525,7 @@ class PokemonBot(commands.Bot):
         # Add entry
         self.active_raffle['entries'].append(ctx.author.name)
         await ctx.send(
-            f"✅ @{ctx.author.name} entered the raffle! ({len(self.active_raffle['entries'])} entries)"
+            f"✅ @{ctx.author.name} entered the raffle! Good luck!"
         )
     
     @commands.command(name='endraffle')
@@ -565,11 +565,84 @@ class PokemonBot(commands.Bot):
         
         await ctx.send(
             f"🎊 @{winner} won the raffle and received {amount} coins! "
-            f"({len(self.active_raffle['entries'])} total entries)"
         )
         
         # Clear raffle
         self.active_raffle = None
+    
+    @commands.command(name='spawn')
+    async def spawn_command(self, ctx, *, pokemon_name: str = None):
+        """Manually spawn a specific Pokemon (mods/admin only)"""
+        # Check if user is mod or admin
+        is_mod_or_admin = (
+            ctx.author.is_mod or 
+            ctx.author.name.lower() == 'justasuspect' or
+            ctx.author.is_broadcaster
+        )
+        
+        if not is_mod_or_admin:
+            await ctx.send(f"@{ctx.author.name} Only mods and the broadcaster can spawn Pokemon!")
+            return
+        
+        if not pokemon_name:
+            await ctx.send(f"@{ctx.author.name} Usage: !p spawn <pokemon_name>")
+            return
+        
+        # Capitalize first letter of each word
+        pokemon_name = pokemon_name.title()
+        
+        # Validate pokemon
+        if pokemon_name not in POKEMON_DATA:
+            await ctx.send(f"@{ctx.author.name} '{pokemon_name}' is not a valid Pokemon!")
+            return
+        
+        # Check if there's already a spawn
+        if self.current_spawn:
+            await ctx.send(f"@{ctx.author.name} There's already a {self.current_spawn} spawned! Wait for it to despawn first.")
+            return
+        
+        # Spawn the pokemon
+        self.current_spawn = pokemon_name
+        self.spawn_time = datetime.now(timezone.utc)
+        
+        pokemon_info = POKEMON_DATA[pokemon_name]
+        
+        # Log spawn
+        logger.info(f"🎮 MANUAL SPAWN by {ctx.author.name}: {pokemon_name} ({pokemon_info['type']}) - {pokemon_info['rarity'].upper()}")
+        
+        rarity_emoji = {
+            "common": "⚪",
+            "uncommon": "🟢",
+            "rare": "🔵",
+            "epic": "🟣",
+            "legendary": "🟡"
+        }
+        
+        await ctx.send(
+            f"{rarity_emoji.get(pokemon_info['rarity'], '⚪')} A wild {pokemon_name} "
+            f"({pokemon_info['type']}) appeared! [{pokemon_info['rarity'].upper()}] "
+            f"Use !p catch <ball_type> to try to catch it! (Available: pokeball, greatball, ultraball, masterball)"
+        )
+        
+        # Broadcast to overlay
+        await self.broadcast_to_overlay({
+            "type": "spawn",
+            "pokemon": pokemon_name,
+            "rarity": pokemon_info['rarity'],
+            "sprite": pokemon_info['sprite']
+        })
+        
+        # Despawn after 60 seconds if not caught
+        async def auto_despawn():
+            await asyncio.sleep(60)
+            if self.current_spawn == pokemon_name:
+                self.current_spawn = None
+                channel = self.get_channel(os.getenv('TWITCH_CHANNEL'))
+                if channel:
+                    await channel.send(f"The wild {pokemon_name} got away!")
+                    await self.broadcast_to_overlay({"type": "despawn"})
+        
+        self.loop.create_task(auto_despawn())
     
     async def websocket_server(self):
         """WebSocket server for overlay communication"""

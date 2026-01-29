@@ -173,7 +173,7 @@ const Pokedex = ({ username }) => {
                 />
                 <p className="text-xs text-gray-400">{getBallName(pokemon.caught_with)}</p>
               </div>
-              <p className="text-xs text-center text-gray-500">
+              <p className="text-xs text-center text-gray-300">
                 {new Date(pokemon.caught_at).toLocaleDateString()}
               </p>
             </div>
