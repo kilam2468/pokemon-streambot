@@ -64,42 +64,42 @@ class PokemonBot(commands.Bot):
         # Handle commands
         await self.handle_commands(message)
     
-    # async def is_stream_live(self):
-    #     """Check if the stream is currently live using Twitch API"""
-    #     try:
-    #         client_id = os.getenv('TWITCH_CLIENT_ID')
-    #         channel_name = os.getenv('TWITCH_CHANNEL')
-    #         token = os.getenv('TWITCH_BOT_TOKEN')
+    async def is_stream_live(self):
+        """Check if the stream is currently live using Twitch API"""
+        try:
+            client_id = os.getenv('TWITCH_CLIENT_ID')
+            channel_name = os.getenv('TWITCH_CHANNEL')
+            token = os.getenv('TWITCH_BOT_TOKEN')
             
-    #         if not client_id or not channel_name or not token:
-    #             logger.warning("Missing Twitch credentials, assuming stream is live")
-    #             return True
+            if not client_id or not channel_name or not token:
+                logger.warning("Missing Twitch credentials, assuming stream is live")
+                return True
             
-    #         # Remove 'oauth:' prefix if present
-    #         if token.startswith('oauth:'):
-    #             token = token[6:]
+            # Remove 'oauth:' prefix if present
+            if token.startswith('oauth:'):
+                token = token[6:]
             
-    #         url = f"https://api.twitch.tv/helix/streams?user_login={channel_name}"
-    #         headers = {
-    #             'Client-ID': client_id,
-    #             'Authorization': f'Bearer {token}'
-    #         }
+            url = f"https://api.twitch.tv/helix/streams?user_login={channel_name}"
+            headers = {
+                'Client-ID': client_id,
+                'Authorization': f'Bearer {token}'
+            }
             
-    #         async with aiohttp.ClientSession() as session:
-    #             async with session.get(url, headers=headers) as response:
-    #                 if response.status == 200:
-    #                     data = await response.json()
-    #                     # If data array has entries, stream is live
-    #                     is_live = len(data.get('data', [])) > 0
-    #                     return is_live
-    #                 else:
-    #                     logger.error(f"Failed to check stream status: {response.status}")
-    #                     # Assume live on error to not break existing functionality
-    #                     return True
-    #     except Exception as e:
-    #         logger.error(f"Error checking stream status: {e}")
-    #         # Assume live on error
-    #         return True
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url, headers=headers) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        # If data array has entries, stream is live
+                        is_live = len(data.get('data', [])) > 0
+                        return is_live
+                    else:
+                        logger.error(f"Failed to check stream status: {response.status}")
+                        # Assume live on error to not break existing functionality
+                        return True
+        except Exception as e:
+            logger.error(f"Error checking stream status: {e}")
+            # Assume live on error
+            return True
     
     async def spawn_pokemon_loop(self):
         """Continuously spawn pokemon at random intervals"""
@@ -113,6 +113,7 @@ class PokemonBot(commands.Bot):
             await asyncio.sleep(spawn_interval)
             
             # Check if stream is live before spawning
+            #TODO: put this back
             if not await self.is_stream_live():
                 logger.info("⏸️ Stream is offline - skipping Pokemon spawn")
                 continue
