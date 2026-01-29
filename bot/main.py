@@ -34,7 +34,7 @@ class PokemonBot(commands.Bot):
             token=os.getenv('TWITCH_BOT_TOKEN'),
             client_id=os.getenv('TWITCH_CLIENT_ID'),
             nick=os.getenv('TWITCH_BOT_NICK'),
-            prefix=['p!', 'p! '],
+            prefix=['p!', 'p! ', '!p', '!p '],
             initial_channels=[os.getenv('TWITCH_CHANNEL')]
         )
         
