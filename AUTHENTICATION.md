@@ -45,7 +45,7 @@ TWITCH_BOT_TOKEN=oauth:a1b2c3d4e5f6g7h8i9j0
 
 1. Replace `YOUR_CLIENT_ID` in this URL:
    ```
-   https://id.twitch.tv/oauth2/authorize?client_id=YOUR_CLIENT_ID&redirect_uri=http://localhost:3000&response_type=token&scope=chat:read+chat:edit
+   https://id.twitch.tv/oauth2/authorize?client_id=YOUR_CLIENT_ID&redirect_uri=http://localhost:3000&response_type=token&scope=chat:read+chat:edit+moderator:read:chatters
    ```
 
 2. Open the URL in your browser

@@ -41,6 +41,7 @@ class PokemonBot(commands.Bot):
         self.current_spawn = None
         self.spawn_time = None
         self.websocket_clients = set()
+        self.websocket_server_task = None
         self.active_raffle = None  # {amount: int, entries: [usernames]}
         self.raffle_task = None  # Timer task for auto-ending raffle
         
@@ -58,7 +59,7 @@ class PokemonBot(commands.Bot):
         self.loop.create_task(self.viewer_rewards_loop())
         
         # Start WebSocket server for overlay
-        self.loop.create_task(self.websocket_server())
+        self.websocket_server_task = self.loop.create_task(self.websocket_server())
     
     async def event_message(self, message):
         if message.echo:
@@ -149,6 +150,10 @@ class PokemonBot(commands.Bot):
                         # Extract usernames from the data
                         chatters = [user['user_login'] for user in data.get('data', [])]
                         return chatters
+                    elif response.status == 401:
+                        logger.warning(f"Failed to get chatters: 401 Unauthorized - Token may be missing 'moderator:read:chatters' scope")
+                        logger.warning("To fix: Regenerate your OAuth token with the required scope using bot/get_oauth_token.py")
+                        return []
                     else:
                         logger.error(f"Failed to get chatters: {response.status}")
                         return []
@@ -746,24 +751,45 @@ class PokemonBot(commands.Bot):
             self.websocket_clients.add(websocket)
             try:
                 await websocket.wait_closed()
+            except Exception as e:
+                logger.error(f"WebSocket handler error for {client_ip}: {e}")
             finally:
+                if websocket in self.websocket_clients:
+                    self.websocket_clients.remove(websocket)
                 logger.info(f"❌ Overlay disconnected from {client_ip}")
-                self.websocket_clients.remove(websocket)
         
         port = int(os.getenv('WEBSOCKET_PORT', 8001))
-        async with websockets.serve(handler, "0.0.0.0", port):
-            logger.info(f"🌐 WebSocket server started on 0.0.0.0:{port}")
-            await asyncio.Future()  # Run forever
+        while True:
+            try:
+                async with websockets.serve(handler, "0.0.0.0", port) as server:
+                    logger.info(f"🌐 WebSocket server started on 0.0.0.0:{port}")
+                    await asyncio.Future()  # Run forever
+            except asyncio.CancelledError:
+                logger.info("WebSocket server task cancelled")
+                break
+            except Exception as e:
+                logger.error(f"WebSocket server error: {e}. Restarting in 5 seconds...")
+                await asyncio.sleep(5)
     
     async def broadcast_to_overlay(self, message):
         """Broadcast message to all connected overlay clients"""
         if self.websocket_clients:
             logger.info(f"📡 Broadcasting to {len(self.websocket_clients)} overlay(s): {message['type']}")
             message_json = json.dumps(message)
-            await asyncio.gather(
-                *[client.send(message_json) for client in self.websocket_clients],
-                return_exceptions=True
-            )
+            
+            # Send to all clients and handle disconnections
+            disconnected = []
+            for client in list(self.websocket_clients):
+                try:
+                    await client.send(message_json)
+                except Exception as e:
+                    logger.warning(f"Failed to send to overlay: {e}")
+                    disconnected.append(client)
+            
+            # Remove disconnected clients
+            for client in disconnected:
+                if client in self.websocket_clients:
+                    self.websocket_clients.remove(client)
         else:
             logger.warning("⚠️ No overlays connected - spawn will not be shown")
 

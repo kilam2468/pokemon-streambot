@@ -11,7 +11,7 @@ import sys
 # Configuration
 CLIENT_ID = input("Enter your Twitch Client ID: ").strip()
 REDIRECT_URI = "http://localhost:3000"
-SCOPES = ["chat:read", "chat:edit", "channel:read:subscriptions"]
+SCOPES = ["chat:read", "chat:edit", "channel:read:subscriptions", "moderator:read:chatters"]
 
 # Global to store the token
 oauth_token = None

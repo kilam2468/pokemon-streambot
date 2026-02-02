@@ -36,7 +36,11 @@ OVERLAY_PATH = BASE_DIR / "overlay" / "index.html"
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Update with your frontend URL in production
+    allow_origins=[
+        "https://poke.hfdn.dev",
+        "http://localhost:4173",  # For local testing
+        "http://localhost:5173",  # For local dev
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

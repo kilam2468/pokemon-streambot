@@ -296,41 +296,76 @@
     </div>
 
     <script>
-        // Automatically detect WebSocket URL based on where overlay is loaded from
-        // Force IPv4 for localhost to avoid IPv6 connection issues
-        let hostname = window.location.hostname || 'localhost';
-        if (hostname === 'localhost') {
-            hostname = '127.0.0.1';
+        // WebSocket configuration
+        // You can override this by adding ?ws=IP:PORT to the URL
+        // Example: http://192.168.1.52:8000/overlay?ws=192.168.1.166:8001
+        const urlParams = new URLSearchParams(window.location.search);
+        const wsParam = urlParams.get('ws');
+        
+        let WS_URL;
+        if (wsParam) {
+            // Use custom WebSocket URL from query parameter
+            WS_URL = `ws://${wsParam}`;
+        } else {
+            // Default: connect to localhost/same host
+            let hostname = window.location.hostname || 'localhost';
+            if (hostname === 'localhost') {
+                hostname = '127.0.0.1';
+            }
+            WS_URL = `ws://${hostname}:8001`;
         }
-        const WS_URL = `ws://${hostname}:8001`;
         
         console.log('Connecting to WebSocket:', WS_URL);
         
         let ws;
-        let reconnectInterval;
+        let reconnectTimeout;
+        let isReconnecting = false;
 
         function connect() {
-            ws = new WebSocket(WS_URL);
+            // Prevent multiple simultaneous connection attempts
+            if (isReconnecting) {
+                console.log('⏳ Connection attempt already in progress...');
+                return;
+            }
+            
+            isReconnecting = true;
+            
+            try {
+                ws = new WebSocket(WS_URL);
 
-            ws.onopen = () => {
-                console.log('✅ Connected to Pokemon bot at', WS_URL);
-                clearInterval(reconnectInterval);
-            };
+                ws.onopen = () => {
+                    console.log('✅ Connected to Pokemon bot at', WS_URL);
+                    isReconnecting = false;
+                    if (reconnectTimeout) {
+                        clearTimeout(reconnectTimeout);
+                        reconnectTimeout = null;
+                    }
+                };
 
-            ws.onmessage = (event) => {
-                console.log('📨 Received message:', event.data);
-                const data = JSON.parse(event.data);
-                handleEvent(data);
-            };
+                ws.onmessage = (event) => {
+                    console.log('📨 Received message:', event.data);
+                    const data = JSON.parse(event.data);
+                    handleEvent(data);
+                };
 
-            ws.onclose = () => {
-                console.log('❌ Disconnected from bot. Reconnecting...');
-                reconnectInterval = setInterval(connect, 5000);
-            };
+                ws.onclose = () => {
+                    console.log('❌ Disconnected from bot. Reconnecting in 5 seconds...');
+                    isReconnecting = false;
+                    if (reconnectTimeout) {
+                        clearTimeout(reconnectTimeout);
+                    }
+                    reconnectTimeout = setTimeout(connect, 5000);
+                };
 
-            ws.onerror = (error) => {
-                console.error('⚠️ WebSocket error:', error);
-            };
+                ws.onerror = (error) => {
+                    console.error('⚠️ WebSocket error:', error);
+                    isReconnecting = false;
+                };
+            } catch (error) {
+                console.error('❌ Failed to create WebSocket:', error);
+                isReconnecting = false;
+                reconnectTimeout = setTimeout(connect, 5000);
+            }
         }
 
         function handleEvent(data) {

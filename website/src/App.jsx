@@ -37,6 +37,29 @@ function AppContent() {
   const location = useLocation();
   const [username, setUsername] = useState(localStorage.getItem('pokemon_username') || '');
   const [tempUsername, setTempUsername] = useState(username);
+  const [isLive, setIsLive] = useState(false);
+
+  // Check Twitch live status
+  useEffect(() => {
+    const checkLiveStatus = async () => {
+      try {
+        // Using Twitch API requires client ID and token, so we'll use a proxy or public endpoint
+        // For now, we'll check periodically
+        const response = await fetch('https://decapi.me/twitch/uptime/justasuspect');
+        const text = await response.text();
+        // If the channel is offline, the response will contain "offline" or error message
+        setIsLive(!text.toLowerCase().includes('offline') && !text.toLowerCase().includes('error'));
+      } catch (error) {
+        console.error('Error checking live status:', error);
+        setIsLive(false);
+      }
+    };
+
+    checkLiveStatus();
+    // Check every 60 seconds
+    const interval = setInterval(checkLiveStatus, 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Check if URL contains a username parameter
   useEffect(() => {
@@ -102,7 +125,30 @@ function AppContent() {
                   </Link>
                 </div>
               </div>
-              <div className="flex items-center">
+              <div className="flex items-center gap-3">
+                {/* Twitch Button */}
+                <a
+                  href="https://www.twitch.tv/justasuspect"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 px-4 py-2 rounded-full font-medium text-sm transition-all duration-300 hover:scale-105"
+                  style={{
+                    background: isLive 
+                      ? 'linear-gradient(135deg, #9146FF 0%, #772CE8 100%)'
+                      : 'rgba(145, 70, 255, 0.2)',
+                    border: isLive ? '1px solid rgba(145, 70, 255, 0.5)' : '1px solid rgba(145, 70, 255, 0.3)',
+                    boxShadow: isLive ? '0 0 20px rgba(145, 70, 255, 0.6), 0 0 40px rgba(145, 70, 255, 0.3)' : 'none'
+                  }}
+                >
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714z"/>
+                  </svg>
+                  {isLive ? (
+                    <span className="font-bold animate-pulse">LIVE</span>
+                  ) : (
+                    <span>Twitch</span>
+                  )}
+                </a>
                 {username ? (
                   <div 
                     className="flex items-center space-x-3 rounded-full px-4 py-2"
